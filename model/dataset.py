@@ -72,15 +72,15 @@ class Dataset(object):
         if train_dirs:
             for train_dir in train_dirs:
                 self.train_set += self.load_dataset(train_dir, num=self.num_train_files, mode='train')
-            self.logger.info('Train set size: {} questions.'.format(len(self.train_set)))
+            self.logger.info('Train set size: {} sessions.'.format(len(self.train_set)))
         if dev_dirs:
             for dev_dir in dev_dirs:
                 self.dev_set += self.load_dataset(dev_dir, num=self.num_dev_files, mode='dev')
-            self.logger.info('Dev set size: {} questions.'.format(len(self.dev_set)))
+            self.logger.info('Dev set size: {} sessions.'.format(len(self.dev_set)))
         if test_dirs:
             for test_dir in test_dirs:
                 self.test_set += self.load_dataset(test_dir, num=self.num_test_files, mode='test')
-            self.logger.info('Test set size: {} questions.'.format(len(self.test_set)))
+            self.logger.info('Test set size: {} sessions.'.format(len(self.test_set)))
 
     def load_dataset(self, data_path, num, mode):
         """
@@ -93,7 +93,7 @@ class Dataset(object):
         if num > 0:
             files = files[0:num]
         for fn in files:
-            # print fn
+            print fn
             lines = open(fn).readlines()
             for line in lines:
                 attr = line.strip().split('\t')
@@ -103,13 +103,9 @@ class Dataset(object):
                 if mode == 'dev' and session_id not in self.dev_session_id:
                     continue
                 query = attr[1].strip().lower()
-                # if query not in self.query_freq[query]:
-                #     continue
-                urls = json.loads(attr[4])
-                if len(urls) != self.max_d_num:
-                    continue
-                vtypes = json.loads(attr[5])
-                clicks = json.loads(attr[6])
+                urls = json.loads(attr[4])[:self.max_d_num]
+                vtypes = json.loads(attr[5])[:self.max_d_num]
+                clicks = json.loads(attr[6])[:self.max_d_num]
                 clicks = [0, 0] + clicks
                 if query not in self.query_qid and mode == 'train':
                     self.query_qid[query] = len(self.query_qid)
