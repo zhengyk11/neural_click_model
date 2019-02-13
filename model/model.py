@@ -183,7 +183,7 @@ class Model(object):
         return max_metric_value, exit_tag, metric_save, patience
 
     def train(self, data):
-        max_metric_value, epoch, patience, metric_save = 0., 0, 0, 0.
+        max_metric_value, epoch, patience, metric_save = 0., 0, 0, 1e10
         step_pbar = tqdm(total=self.args.num_steps)
         exit_tag = False
         self.writer.add_scalar('train/lr', self.learning_rate, self.global_step)
