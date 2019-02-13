@@ -93,7 +93,7 @@ class Dataset(object):
         if num > 0:
             files = files[0:num]
         for fn in files:
-            print fn
+            # print fn
             lines = open(fn).readlines()
             for line in lines:
                 attr = line.strip().split('\t')
@@ -103,7 +103,11 @@ class Dataset(object):
                 if mode == 'dev' and session_id not in self.dev_session_id:
                     continue
                 query = attr[1].strip().lower()
-                urls = json.loads(attr[4])[:self.max_d_num]
+
+                urls = json.loads(attr[4])
+                if len(urls) < self.max_d_num:
+                    continue
+                urls = urls[:self.max_d_num]
                 vtypes = json.loads(attr[5])[:self.max_d_num]
                 clicks = json.loads(attr[6])[:self.max_d_num]
                 clicks = [0, 0] + clicks
