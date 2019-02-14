@@ -32,12 +32,11 @@ class Dataset(object):
     """
     This module implements the APIs for loading and using baidu reading comprehension dataset
     """
-    def __init__(self, args, train_dirs=[], dev_dirs=[], test_dirs=[], vocab=None):
+    def __init__(self, args, train_dirs=[], dev_dirs=[], test_dirs=[], isRank=False):
         self.logger = logging.getLogger("neural_click_model")
         self.max_d_num = args.max_d_num
         self.gpu_num = args.gpu_num
         self.args = args
-        self.vocab = vocab
         self.num_train_files = args.num_train_files
         self.num_dev_files = args.num_dev_files
         self.num_test_files = args.num_test_files
@@ -68,19 +67,34 @@ class Dataset(object):
                 continue
             self.dev_session_id[session_id] = 0
 
+        self.qid_uid_set = {}
         self.train_set, self.dev_set, self.test_set = [], [], []
-        if train_dirs:
-            for train_dir in train_dirs:
-                self.train_set += self.load_dataset(train_dir, num=self.num_train_files, mode='train')
-            self.logger.info('Train set size: {} sessions.'.format(len(self.train_set)))
-        if dev_dirs:
-            for dev_dir in dev_dirs:
-                self.dev_set += self.load_dataset(dev_dir, num=self.num_dev_files, mode='dev')
-            self.logger.info('Dev set size: {} sessions.'.format(len(self.dev_set)))
-        if test_dirs:
-            for test_dir in test_dirs:
-                self.test_set += self.load_dataset(test_dir, num=self.num_test_files, mode='test')
-            self.logger.info('Test set size: {} sessions.'.format(len(self.test_set)))
+        if isRank:
+            if train_dirs:
+                for train_dir in train_dirs:
+                    self.train_set += self.load_dataset_rank(train_dir, num=self.num_train_files, mode='train')
+                self.logger.info('Train set size: {} sessions.'.format(len(self.train_set)))
+            if dev_dirs:
+                for dev_dir in dev_dirs:
+                    self.dev_set += self.load_dataset_rank(dev_dir, num=self.num_dev_files, mode='dev')
+                self.logger.info('Dev set size: {} sessions.'.format(len(self.dev_set)))
+            if test_dirs:
+                for test_dir in test_dirs:
+                    self.test_set += self.load_dataset_rank(test_dir, num=self.num_test_files, mode='test')
+                self.logger.info('Test set size: {} sessions.'.format(len(self.test_set)))
+        else:
+            if train_dirs:
+                for train_dir in train_dirs:
+                    self.train_set += self.load_dataset(train_dir, num=self.num_train_files, mode='train')
+                self.logger.info('Train set size: {} sessions.'.format(len(self.train_set)))
+            if dev_dirs:
+                for dev_dir in dev_dirs:
+                    self.dev_set += self.load_dataset(dev_dir, num=self.num_dev_files, mode='dev')
+                self.logger.info('Dev set size: {} sessions.'.format(len(self.dev_set)))
+            if test_dirs:
+                for test_dir in test_dirs:
+                    self.test_set += self.load_dataset(test_dir, num=self.num_test_files, mode='test')
+                self.logger.info('Test set size: {} sessions.'.format(len(self.test_set)))
 
     def load_dataset(self, data_path, num, mode):
         """
@@ -104,11 +118,11 @@ class Dataset(object):
                     continue
                 query = attr[1].strip().lower()
 
-                urls = json.loads(attr[4])
+                urls = [url.encode('utf-8', 'ignore') for url in json.loads(attr[4])]
                 if len(urls) < self.max_d_num:
                     continue
                 urls = urls[:self.max_d_num]
-                vtypes = json.loads(attr[5])[:self.max_d_num]
+                vtypes = [vtype.encode('utf-8', 'ignore') for vtype in json.loads(attr[5])][:self.max_d_num]
                 clicks = json.loads(attr[6])[:self.max_d_num]
                 clicks = [0, 0] + clicks
                 if query not in self.query_qid and mode == 'train':
@@ -137,7 +151,68 @@ class Dataset(object):
                         vids.append(self.vtype_vid[vtype])
                     else:
                         vids.append(0)
-                data_set.append({'session_id': session_id, 'qids':qids, 'uids': uids, 'vids': vids, 'clicks': clicks})
+                data_set.append({'session_id': session_id,
+                                 'qids': qids, 'query': query,
+                                 'uids': uids, 'urls': [''] + urls,
+                                 'vids': vids, 'vtypes': [''] + vtypes,
+                                 'clicks': clicks})
+        return data_set
+
+    def load_dataset_rank(self, data_path, num, mode):
+        """
+        Loads the dataset
+        Args:
+            data_path: the data file to load
+        """
+        data_set = []
+        files = sorted(glob.glob(data_path + '/part-*'))
+        if num > 0:
+            files = files[0:num]
+        for fn in files:
+            # print fn
+            lines = open(fn).readlines()
+            for line in lines:
+                attr = line.strip().split('\t')
+                session_id = attr[0]
+                if session_id not in self.train_session_id:
+                    continue
+                query = attr[1].strip().lower()
+                if query not in self.query_qid:
+                    self.query_qid[query] = len(self.query_qid)
+                    self.qid_query[self.query_qid[query]] = query
+                qid = self.query_qid[query]
+
+                urls = [url.encode('utf-8', 'ignore') for url in json.loads(attr[4])]
+                if len(urls) < self.max_d_num:
+                    continue
+                urls = urls[:self.max_d_num]
+                vtypes = [vtype.encode('utf-8', 'ignore') for vtype in json.loads(attr[5])][:self.max_d_num]
+                # clicks = json.loads(attr[6])[:self.max_d_num]
+                for curr_url, curr_vtype in zip(urls, vtypes):
+                    clicks = [0, 0, 0]
+                    qids = [qid, qid]
+                    uids = [0]
+                    if curr_url not in self.url_uid:
+                        self.url_uid[curr_url] = len(self.url_uid)
+                        self.uid_url[self.url_uid[curr_url]] = curr_url
+                    uids.append(self.url_uid[curr_url])
+                    vids = [0]
+                    if curr_vtype not in self.vtype_vid:
+                        self.vtype_vid[curr_vtype] = len(self.vtype_vid)
+                        self.vid_vtype[self.vtype_vid[curr_vtype]] = curr_vtype
+                    vids.append(self.vtype_vid[curr_vtype])
+
+                    if qid not in self.qid_uid_set:
+                        self.qid_uid_set[qid] = {}
+                    if uids[-1] not in self.qid_uid_set[qid]:
+                        self.qid_uid_set[qid][uids[-1]] = 0
+                    else:
+                        continue
+                    data_set.append({'session_id': session_id,
+                                     'qids':qids, 'query': query,
+                                     'uids': uids, 'urls': ['', curr_url],
+                                     'vids': vids, 'vtypes': ['', curr_vtype],
+                                     'clicks': clicks})
         return data_set
 
     def _one_mini_batch(self, data, indices):

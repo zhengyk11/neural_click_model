@@ -201,7 +201,7 @@ class Model(object):
         for b_itx, batch in enumerate(eval_batches):
             if b_itx == t:
                 break
-            if b_itx % 5000 == 0:
+            if b_itx % 50000 == 0:
                 self.logger.info('Evaluation step {}.'.format(b_itx))
             QIDS = Variable(torch.from_numpy(np.array(batch['qids'], dtype=np.int64)))
             UIDS = Variable(torch.from_numpy(np.array(batch['uids'], dtype=np.int64)))
@@ -216,8 +216,8 @@ class Model(object):
             # total_loss_list += loss_list
             # pred_logits_list = pred_logits.data.cpu().numpy().tolist()
             for pred_metric, data, pred_logit in zip(loss_list, batch['raw_data'], pred_logits.data.cpu().numpy().tolist()):
-                eval_ouput.append([data['session_id'], dataset.qid_query[data['qids'][0]],
-                                   data['uids'][1:], data['vids'][1:], data['clicks'][2:], pred_logit, pred_metric])
+                eval_ouput.append([data['session_id'], data['query'],
+                                   data['urls'][1:], data['vtypes'][1:], data['clicks'][2:], pred_logit, pred_metric])
             total_loss += loss.data[0] * len(batch['raw_data'])
             total_num += len(batch['raw_data'])
 

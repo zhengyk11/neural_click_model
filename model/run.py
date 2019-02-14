@@ -28,6 +28,8 @@ def parse_args():
                         help='evaluate the model on dev set')
     parser.add_argument('--predict', action='store_true',
                         help='predict the answers for test set with trained model')
+    parser.add_argument('--rank', action='store_true',
+                        help='rank on train set')
     parser.add_argument('--gpu', type=str, default='',
                         help='specify gpu device')
 
@@ -138,6 +140,31 @@ def parse_args():
 #
 #     logger.info('Done with preparing!')
 
+
+def rank(args):
+    """
+    trains the reading comprehension model
+    """
+    logger = logging.getLogger("neural_click_model")
+    logger.info('Checking the data files...')
+    for data_path in args.train_dirs + args.dev_dirs:
+        assert os.path.exists(data_path), '{} file does not exist.'.format(data_path)
+    # logger.info('Load data_set and vocab...')
+    # with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
+    #     vocab = pickle.load(fin)
+    #     logger.info('Vocab size is {}'.format(vocab.size()))
+    dataset = Dataset(args, dev_dirs=args.dev_dirs, isRank=True)
+    logger.info('Initialize the model...')
+    model = Model(args, len(dataset.qid_query), len(dataset.uid_url),  len(dataset.vid_vtype))
+    logger.info('model.global_step: {}'.format(model.global_step))
+    assert args.load_model > -1
+    logger.info('Restoring the model...')
+    model.load_model(model_dir=args.model_dir, model_prefix=args.algo, global_step=args.load_model)
+    logger.info('Training the model...')
+    dev_batches = dataset.gen_mini_batches('dev', args.batch_size, shuffle=False)
+    model.evaluate(dev_batches, dataset, result_dir=args.result_dir,
+        result_prefix='dev.predicted.{}.{}.{}'.format(args.algo, args.load_model, time.time()))
+    logger.info('Done with model ranking!')
 
 def train(args):
     """
@@ -261,6 +288,8 @@ def run():
         evaluate(args)
     if args.predict:
         predict(args)
+    if args.rank:
+        rank(args)
     logger.info('run done.')
 
 if __name__ == '__main__':
