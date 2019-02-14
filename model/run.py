@@ -147,7 +147,7 @@ def rank(args):
     """
     logger = logging.getLogger("neural_click_model")
     logger.info('Checking the data files...')
-    for data_path in args.train_dirs + args.dev_dirs:
+    for data_path in args.dev_dirs:
         assert os.path.exists(data_path), '{} file does not exist.'.format(data_path)
     # logger.info('Load data_set and vocab...')
     # with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
