@@ -163,7 +163,7 @@ def rank(args):
     logger.info('Training the model...')
     dev_batches = dataset.gen_mini_batches('dev', args.batch_size, shuffle=False)
     model.evaluate(dev_batches, dataset, result_dir=args.result_dir,
-        result_prefix='dev.predicted.{}.{}.{}'.format(args.algo, args.load_model, time.time()))
+        result_prefix='rank.predicted.{}.{}.{}'.format(args.algo, args.load_model, time.time()))
     logger.info('Done with model ranking!')
 
 def train(args):
@@ -196,29 +196,25 @@ def evaluate(args):
     """
     logger = logging.getLogger("neural_click_model")
     logger.info('Checking the data files...')
-    for data_path in args.dev_files:
+    for data_path in args.train_dirs + args.dev_dirs:
         assert os.path.exists(data_path), '{} file does not exist.'.format(data_path)
-    logger.info('Load data_set and vocab...')
-    with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
-        vocab = pickle.load(fin)
-        logger.info('Vocab size is {}'.format(vocab.size()))
+    # logger.info('Load data_set and vocab...')
+    # with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
+    #     vocab = pickle.load(fin)
+    #     logger.info('Vocab size is {}'.format(vocab.size()))
 
-    assert len(args.dev_files) > 0, 'No dev files are provided.'
-    dataset = Dataset(args, dev_files=args.dev_files, vocab=vocab)
+    assert len(args.dev_dirs) > 0, 'No dev files are provided.'
+    dataset = Dataset(args, train_dirs=args.train_dirs, dev_dirs=args.dev_dirs)
     logger.info('Restoring the model...')
-    model = Model(args, vocab)
+    model = Model(args, len(dataset.qid_query), len(dataset.uid_url),  len(dataset.vid_vtype))
     logger.info('model.global_step: {}'.format(model.global_step))
     model.load_model(model_dir=args.model_dir, model_prefix=args.algo, global_step=args.load_model)
     logger.info('Evaluating the model on dev set...')
-    dev_batches = dataset.gen_mini_batches('dev', args.batch_size,
-                                            pad_id=vocab.get_id(vocab.pad_token),
-                                            shuffle=False)
-    dev_loss = model.evaluate(
-        dev_batches, dataset, result_dir=args.result_dir,
+    dev_batches = dataset.gen_mini_batches('dev', args.batch_size, shuffle=False)
+    dev_loss = model.evaluate(dev_batches, dataset, result_dir=args.result_dir,
         result_prefix='dev.predicted.{}.{}.{}'.format(args.algo, args.load_model, time.time()))
     logger.info('Loss on dev set: {}'.format(dev_loss))
-    # logger.info('Result on dev set: {}'.format(dev_bleu_rouge))
-    logger.info('Predicted answers are saved to {}'.format(os.path.join(args.result_dir)))
+    logger.info('Predicted results are saved to {}'.format(os.path.join(args.result_dir)))
 
 
 def predict(args):
