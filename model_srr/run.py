@@ -216,23 +216,23 @@ def evaluate(args):
     logger.info('Loss on dev set: {}'.format(dev_loss))
     logger.info('Predicted results are saved to {}'.format(os.path.join(args.result_dir)))
 
-
+#TODO:predict not ready
 def predict(args):
     """
     predicts answers for test files
     """
     logger = logging.getLogger("neural_click_model")
     logger.info('Checking the data files...')
-    for data_path in args.test_files:
+    for data_path in args.train_dirs + args.dev_dirs:
         assert os.path.exists(data_path), '{} file does not exist.'.format(data_path)
-    logger.info('Load data_set and vocab...')
-    with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
-        vocab = pickle.load(fin)
-        logger.info('Vocab size is {}'.format(vocab.size()))
+    # logger.info('Load data_set and vocab...')
+    # with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
+    #     vocab = pickle.load(fin)
+    #     logger.info('Vocab size is {}'.format(vocab.size()))
     assert len(args.test_files) > 0, 'No test files are provided.'
-    dataset = Dataset(args, test_files=args.test_files, vocab=vocab)
+    dataset = Dataset(args, train_dirs=args.train_dirs, test_dirs=args.test_dirs)
     logger.info('Restoring the model...')
-    model = Model(args, vocab)
+    model = Model(args, len(dataset.qid_query), len(dataset.uid_url),  len(dataset.vid_vtype))
     logger.info('model.global_step: {}'.format(model.global_step))
     model.load_model(model_dir=args.model_dir, model_prefix=args.algo, global_step=args.load_model)
     logger.info('Predicting answers for test set...')

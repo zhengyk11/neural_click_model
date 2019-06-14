@@ -54,18 +54,18 @@ class Dataset(object):
         #     freq = int(attr[3])
         #     self.query_freq[query] = freq
 
-        self.train_session_id, self.dev_session_id = {}, {}
-        for line in open('../data/mcm_0212_50/metrics.txt'):
-            attr = line.strip().split('\t')
-            session_id = attr[0]
-            self.train_session_id[session_id] = 0
-        for line in open('../data/mcm_0212_50/click_prediction.txt'):
-            attr = line.strip().split('\t')
-            session_id = attr[0]
-            freq = int(attr[1])
-            if freq < 10:
-                continue
-            self.dev_session_id[session_id] = 0
+        # self.train_session_id, self.dev_session_id = {}, {}
+        # for line in open('../data/mcm_0212_50/metrics.txt'):
+        #     attr = line.strip().split('\t')
+        #     session_id = attr[0]
+        #     self.train_session_id[session_id] = 0
+        # for line in open('../data/mcm_0212_50/click_prediction.txt'):
+        #     attr = line.strip().split('\t')
+        #     session_id = attr[0]
+        #     freq = int(attr[1])
+        #     if freq < 10:
+        #         continue
+        #     self.dev_session_id[session_id] = 0
 
         self.qid_uid_set = {}
         self.train_set, self.dev_set, self.test_set = [], [], []
@@ -74,14 +74,14 @@ class Dataset(object):
                 for train_dir in train_dirs:
                     self.train_set += self.load_dataset_rank(train_dir, num=self.num_train_files, mode='train')
                 self.logger.info('Train set size: {} sessions.'.format(len(self.train_set)))
-            if dev_dirs:
-                for dev_dir in dev_dirs:
-                    self.dev_set += self.load_dataset_rank(dev_dir, num=self.num_dev_files, mode='dev')
-                self.logger.info('Dev set size: {} sessions.'.format(len(self.dev_set)))
-            if test_dirs:
-                for test_dir in test_dirs:
-                    self.test_set += self.load_dataset_rank(test_dir, num=self.num_test_files, mode='test')
-                self.logger.info('Test set size: {} sessions.'.format(len(self.test_set)))
+            # if dev_dirs:
+            #     for dev_dir in dev_dirs:
+            #         self.dev_set += self.load_dataset_rank(dev_dir, num=self.num_dev_files, mode='dev')
+            #     self.logger.info('Dev set size: {} sessions.'.format(len(self.dev_set)))
+            # if test_dirs:
+            #     for test_dir in test_dirs:
+            #         self.test_set += self.load_dataset_rank(test_dir, num=self.num_test_files, mode='test')
+            #     self.logger.info('Test set size: {} sessions.'.format(len(self.test_set)))
         else:
             if train_dirs:
                 for train_dir in train_dirs:
@@ -103,7 +103,7 @@ class Dataset(object):
             data_path: the data file to load
         """
         data_set = []
-        files = sorted(glob.glob(data_path + '/part-*'))
+        files = sorted(glob.glob(data_path + '/click_data*'))
         if num > 0:
             files = files[0:num]
         for fn in files:
@@ -111,19 +111,19 @@ class Dataset(object):
             lines = open(fn).readlines()
             for line in lines:
                 attr = line.strip().split('\t')
-                session_id = attr[0]
-                if mode == 'train' and session_id not in self.train_session_id:
-                    continue
-                if mode == 'dev' and session_id not in self.dev_session_id:
-                    continue
-                query = attr[1].strip().lower()
+                session_id = attr[4]
+                # if mode == 'train' and session_id not in self.train_session_id:
+                #     continue
+                # if mode == 'dev' and session_id not in self.dev_session_id:
+                #     continue
+                query = attr[0].strip().lower()
 
-                urls = [url.encode('utf-8', 'ignore') for url in json.loads(attr[4])]
+                urls = map(int, attr[1].strip().split())
                 if len(urls) < self.max_d_num:
                     continue
                 urls = urls[:self.max_d_num]
-                vtypes = [vtype.encode('utf-8', 'ignore') for vtype in json.loads(attr[5])][:self.max_d_num]
-                clicks = json.loads(attr[6])[:self.max_d_num]
+                vtypes = map(int, attr[2].strip().split())[:self.max_d_num]
+                clicks = map(int, attr[3].strip().split())[:self.max_d_num]
                 clicks = [0, 0] + clicks
                 if query not in self.query_qid and mode == 'train':
                     self.query_qid[query] = len(self.query_qid)
@@ -165,7 +165,7 @@ class Dataset(object):
             data_path: the data file to load
         """
         data_set = []
-        files = sorted(glob.glob(data_path + '/part-*'))
+        files = sorted(glob.glob(data_path + '/click_data*'))
         if num > 0:
             files = files[0:num]
         for fn in files:
@@ -173,20 +173,21 @@ class Dataset(object):
             lines = open(fn).readlines()
             for line in lines:
                 attr = line.strip().split('\t')
-                session_id = attr[0]
-                if session_id not in self.train_session_id:
-                    continue
-                query = attr[1].strip().lower()
+                session_id = attr[4]
+                # if session_id not in self.train_session_id:
+                #     continue
+                query = attr[0].strip().lower()
                 if query not in self.query_qid:
                     self.query_qid[query] = len(self.query_qid)
                     self.qid_query[self.query_qid[query]] = query
                 qid = self.query_qid[query]
 
-                urls = [url.encode('utf-8', 'ignore') for url in json.loads(attr[4])]
+                urls = map(int, attr[1].strip().split())
                 if len(urls) < self.max_d_num:
                     continue
                 urls = urls[:self.max_d_num]
-                vtypes = [vtype.encode('utf-8', 'ignore') for vtype in json.loads(attr[5])][:self.max_d_num]
+                vtypes = map(int, attr[2].strip().split())[:self.max_d_num]
+                # clicks = map(int, attr[3].strip().split())[:self.max_d_num]
                 # clicks = json.loads(attr[6])[:self.max_d_num]
                 for curr_url, curr_vtype in zip(urls, vtypes):
                     clicks = [0, 0, 0]
