@@ -203,7 +203,7 @@ class Model(object):
         for b_itx, batch in enumerate(eval_batches):
             if b_itx == t:
                 break
-            if b_itx % 50000 == 0:
+            if b_itx % 100 == 0:
                 self.logger.info('Evaluation step {}.'.format(b_itx))
             QIDS = Variable(torch.from_numpy(np.array(batch['qids'], dtype=np.int64)))
             UIDS = Variable(torch.from_numpy(np.array(batch['uids'], dtype=np.int64)))
