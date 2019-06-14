@@ -117,7 +117,7 @@ class Model(object):
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = param_group['lr'] * decay_rate
 
-    def _train_epoch(self, train_batches, data, max_metric_value, metric_save, patience, step_pbar):
+    def _train_epoch(self, train_batches, data, min_loss_value, metric_save, patience, step_pbar):
         """
         Trains the model for a single epoch.
         Args:
@@ -147,7 +147,8 @@ class Model(object):
             loss.backward()
             self.optimizer.step()
             self.writer.add_scalar('train/loss', loss.data[0], self.global_step)
-
+            if check_point > 0 and self.global_step % check_point == 0:
+                self.save_model(save_dir, save_prefix)
             if evaluate and self.global_step % self.eval_freq == 0:
                 if data.dev_set is not None:
                     eval_batches = data.gen_mini_batches('dev', batch_size, shuffle=False)
@@ -160,6 +161,9 @@ class Model(object):
                     # if metrics['ndcg@10'] > max_metric_value:
                     #     self.save_model(save_dir, save_prefix+'_best')
                     #     max_metric_value = metrics['ndcg@10']
+                    if eval_loss < min_loss_value:
+                        self.save_model(save_dir, save_prefix + '_best')
+                        min_loss_value = eval_loss
 
                     if eval_loss < metric_save:
                         metric_save = eval_loss
@@ -175,23 +179,21 @@ class Model(object):
                         self.patience += 1
                 else:
                     self.logger.warning('No dev set is loaded for evaluation in the dataset!')
-            if check_point > 0 and self.global_step % check_point == 0:
-                self.save_model(save_dir, save_prefix)
             if self.global_step >= num_steps:
                 exit_tag = True
 
-        return max_metric_value, exit_tag, metric_save, patience
+        return min_loss_value, exit_tag, metric_save, patience
 
     def train(self, data):
-        max_metric_value, epoch, patience, metric_save = 0., 0, 0, 1e10
+        min_loss_value, epoch, patience, metric_save = 1e10, 0, 0, 1e10
         step_pbar = tqdm(total=self.args.num_steps)
         exit_tag = False
         self.writer.add_scalar('train/lr', self.learning_rate, self.global_step)
         while not exit_tag:
             epoch += 1
             train_batches = data.gen_mini_batches('train', self.args.batch_size, shuffle=True)
-            max_metric_value, exit_tag, metric_save, patience = self._train_epoch(train_batches, data,
-                                                                                max_metric_value, metric_save,
+            min_loss_value, exit_tag, metric_save, patience = self._train_epoch(train_batches, data,
+                                                                                min_loss_value, metric_save,
                                                                                 patience, step_pbar)
 
     def evaluate(self, eval_batches, dataset, result_dir=None, result_prefix=None, t=-1):
