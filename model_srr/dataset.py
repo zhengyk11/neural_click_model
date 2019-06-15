@@ -217,11 +217,13 @@ class Dataset(object):
                       'qids': [],
                       'uids': [],
                       'vids': [],
+                      'ranks': [],
                       'clicks': []}
         for sidx, sample in enumerate(batch_data['raw_data']):
             batch_data['qids'].append(sample['qids'])
             batch_data['uids'].append(sample['uids'])
             batch_data['vids'].append(sample['vids'])
+            batch_data['ranks'].append(sample['rank'])
             batch_data['clicks'].append(sample['clicks'])
         return batch_data
 

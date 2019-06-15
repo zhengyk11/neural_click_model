@@ -115,14 +115,14 @@ class Model(object):
             QIDS = Variable(torch.from_numpy(np.array(batch['qids'], dtype=np.int64)))
             UIDS = Variable(torch.from_numpy(np.array(batch['uids'], dtype=np.int64)))
             VIDS = Variable(torch.from_numpy(np.array(batch['vids'], dtype=np.int64)))
-            RANK = Variable(torch.from_numpy(np.array(batch['rank'], dtype=np.int64)))
+            RANKS = Variable(torch.from_numpy(np.array(batch['ranks'], dtype=np.int64)))
             CLICKS = Variable(torch.from_numpy(np.array(batch['clicks'], dtype=np.int64))[:,:-1])
             if use_cuda:
-                QIDS, UIDS, VIDS, RANK, CLICKS = QIDS.cuda(), UIDS.cuda(), VIDS.cuda(), RANK.cuda(), CLICKS.cuda()
+                QIDS, UIDS, VIDS, RANKS, CLICKS = QIDS.cuda(), UIDS.cuda(), VIDS.cuda(), RANKS.cuda(), CLICKS.cuda()
 
             self.model.train()
             self.optimizer.zero_grad()
-            pred_logits = self.model(QIDS, UIDS, VIDS, RANK, CLICKS)
+            pred_logits = self.model(QIDS, UIDS, VIDS, RANKS, CLICKS)
             loss, loss_list = self.compute_loss(pred_logits, batch['clicks'])
             loss.backward()
             self.optimizer.step()
@@ -188,13 +188,13 @@ class Model(object):
             QIDS = Variable(torch.from_numpy(np.array(batch['qids'], dtype=np.int64)))
             UIDS = Variable(torch.from_numpy(np.array(batch['uids'], dtype=np.int64)))
             VIDS = Variable(torch.from_numpy(np.array(batch['vids'], dtype=np.int64)))
-            RANK = Variable(torch.from_numpy(np.array(batch['rank'], dtype=np.int64)))
+            RANKS = Variable(torch.from_numpy(np.array(batch['ranks'], dtype=np.int64)))
             CLICKS = Variable(torch.from_numpy(np.array(batch['clicks'], dtype=np.int64))[:,:-1])
             if use_cuda:
-                QIDS, UIDS, VIDS, RANK, CLICKS = QIDS.cuda(), UIDS.cuda(), VIDS.cuda(), RANK.cuda(), CLICKS.cuda()
+                QIDS, UIDS, VIDS, RANKS, CLICKS = QIDS.cuda(), UIDS.cuda(), VIDS.cuda(), RANKS.cuda(), CLICKS.cuda()
 
             self.model.eval()
-            pred_logits = self.model(QIDS, UIDS, VIDS, RANK, CLICKS)
+            pred_logits = self.model(QIDS, UIDS, VIDS, RANKS, CLICKS)
             loss, loss_list = self.compute_loss(pred_logits, batch['clicks'])
             # total_loss_list += loss_list
             # pred_logits_list = pred_logits.data.cpu().numpy().tolist()
