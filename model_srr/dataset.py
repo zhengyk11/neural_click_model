@@ -101,11 +101,12 @@ class Dataset(object):
                 #     continue
                 query = attr[0].strip().lower()
 
-                urls = map(int, attr[1].strip().split())
+                urls = map(int, attr[2].strip().split())
                 if len(urls) < self.max_d_num:
                     continue
                 urls = urls[:self.max_d_num]
-                vtypes = map(int, attr[2].strip().split())[:self.max_d_num]
+                # vtypes = map(int, attr[1].strip().split())[:self.max_d_num]
+                vtypes = [0] * self.max_d_num
                 clicks = map(int, attr[3].strip().split())[:self.max_d_num]
                 clicks = [0, 0] + clicks
                 if query not in self.query_qid and mode == 'train':
@@ -138,6 +139,7 @@ class Dataset(object):
                                  'qids': qids, 'query': query,
                                  'uids': uids, 'urls': [''] + urls,
                                  'vids': vids, 'vtypes': [''] + vtypes,
+                                 'rank': [i for i in range(11)],
                                  'clicks': clicks})
         return data_set
 
@@ -165,14 +167,15 @@ class Dataset(object):
                     self.qid_query[self.query_qid[query]] = query
                 qid = self.query_qid[query]
 
-                urls = map(int, attr[1].strip().split())
+                urls = map(int, attr[2].strip().split())
                 if len(urls) < self.max_d_num:
                     continue
                 urls = urls[:self.max_d_num]
-                vtypes = map(int, attr[2].strip().split())[:self.max_d_num]
+                vtypes = [0] * self.max_d_num
+                # vtypes = map(int, attr[1].strip().split())[:self.max_d_num]
                 # clicks = map(int, attr[3].strip().split())[:self.max_d_num]
                 # clicks = json.loads(attr[6])[:self.max_d_num]
-                for curr_url, curr_vtype in zip(urls, vtypes):
+                for idx, (curr_url, curr_vtype) in enumerate(zip(urls, vtypes)):
                     clicks = [0, 0, 0]
                     qids = [qid, qid]
                     uids = [0]
@@ -192,10 +195,11 @@ class Dataset(object):
                         self.qid_uid_set[qid][uids[-1]] = 0
                     else:
                         continue
-                    data_set.append({'session_id': session_id,
+                    data_set.append({'session_id': session_id + '-' + str(idx),
                                      'qids':qids, 'query': query,
                                      'uids': uids, 'urls': ['', curr_url],
                                      'vids': vids, 'vtypes': ['', curr_vtype],
+                                     'rank': [i for i in range(2)],
                                      'clicks': clicks})
         return data_set
 

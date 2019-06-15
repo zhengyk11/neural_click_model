@@ -23,8 +23,9 @@ class Network(nn.Module):
 
         self.query_embedding = nn.Embedding(query_size, self.embed_size)
         self.doc_embedding = nn.Embedding(doc_size, self.embed_size)
-        self.vtype_embedding = nn.Embedding(vtype_size, self.embed_size/2)
-        self.action_embedding = nn.Embedding(2, self.embed_size/2)
+        # self.vtype_embedding = nn.Embedding(vtype_size, self.embed_size / 2)
+        self.rank_embedding = nn.Embedding(self.args.max_d_num + 1, self.embed_size / 2)
+        self.action_embedding = nn.Embedding(2, self.embed_size / 2)
 
         self.gru = nn.GRU(self.embed_size*3, self.hidden_size,
                           batch_first=True, dropout=self.dropout_rate, num_layers=self.encode_gru_num_layer)
@@ -32,16 +33,17 @@ class Network(nn.Module):
         self.output_linear = nn.Linear(self.hidden_size, 1)
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, query, doc, vtype, action):
+    def forward(self, query, doc, vtype, rank, action):
         batch_size = query.size()[0]
         max_doc_num = doc.size()[1]
 
         query_embed = self.query_embedding(query)  # batch_size, 11, embed_size
         doc_embed = self.doc_embedding(doc)  # batch_size, 11, embed_size
-        vtype_embed = self.vtype_embedding(vtype)  # batch_size, 11, embed_size/2
+        # vtype_embed = self.vtype_embedding(vtype)  # batch_size, 11, embed_size/2
+        rank_embed = self.rank_embedding(rank)
         action_embed = self.action_embedding(action)  # batch_size, 11, embed_size/2
 
-        gru_input = torch.cat((query_embed, doc_embed, vtype_embed, action_embed), dim=2)
+        gru_input = torch.cat((query_embed, doc_embed, rank_embed, action_embed), dim=2)
         init_gru_state = Variable(torch.zeros(1, batch_size, self.hidden_size))
         if use_cuda:
             init_gru_state = init_gru_state.cuda()
@@ -60,12 +62,14 @@ if __name__ == '__main__':
             self.embed_size = 300
             self.hidden_size = 150
             self.dropout_rate = 0.2
+            self.max_d_num = 10
 
     args = config()
     model = Network(args, 10, 20, 30)
     q = Variable(torch.zeros(8, 11).long())
     d = Variable(torch.zeros(8, 11).long())
     v = Variable(torch.zeros(8, 11).long())
+    r = Variable(torch.zeros(8, 11).long())
     a = Variable(torch.zeros(8, 11).long())
-    model(q, d, v, a)
+    model(q, d, v, r, a)
     print count_parameters(model)
