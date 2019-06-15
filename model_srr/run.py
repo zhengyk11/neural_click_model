@@ -1,3 +1,5 @@
+# -*- coding:utf8 -*-
+
 import sys
 import time
 if sys.version[0] == '2':
