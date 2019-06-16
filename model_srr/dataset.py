@@ -81,6 +81,11 @@ class Dataset(object):
         self.logger.info('Query size: {}.'.format(len(self.qid_query)))
         self.logger.info('URL size: {}.'.format(len(self.uid_url)))
         self.logger.info('Vertical type size: {}.'.format(len(self.vid_vtype)))
+        cnt = 0
+        for qid in self.qid_uid_set:
+            for uid in self.qid_uid_set[qid]:
+                cnt += 1
+        self.logger.info('Query-URL pair size: {}.'.format(cnt))
 
     def load_dataset(self, data_path, num, mode):
         """
@@ -129,6 +134,11 @@ class Dataset(object):
                         uids.append(self.url_uid[url])
                     else:
                         uids.append(0)
+                    if mode == 'train':
+                        if qid not in self.qid_uid_set:
+                            self.qid_uid_set[qid] = {}
+                        if uids[-1] not in self.qid_uid_set[qid]:
+                            self.qid_uid_set[qid][uids[-1]] = 0
                 vids = [0]
                 for vtype in vtypes:
                     if vtype not in self.vtype_vid and mode == 'train':
