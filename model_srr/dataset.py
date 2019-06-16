@@ -57,10 +57,10 @@ class Dataset(object):
                 for train_dir in train_dirs:
                     self.train_set += self.load_dataset_rank(train_dir, num=self.num_train_files, mode='train')
                 self.logger.info('Train set size: {} sessions.'.format(len(self.train_set)))
-            # if dev_dirs:
-            #     for dev_dir in dev_dirs:
-            #         self.dev_set += self.load_dataset_rank(dev_dir, num=self.num_dev_files, mode='dev')
-            #     self.logger.info('Dev set size: {} sessions.'.format(len(self.dev_set)))
+            if dev_dirs:
+                for dev_dir in dev_dirs:
+                    self.dev_set += self.load_dataset_rank(dev_dir, num=self.num_dev_files, mode='dev')
+                self.logger.info('Dev set size: {} sessions.'.format(len(self.dev_set)))
             # if test_dirs:
             #     for test_dir in test_dirs:
             #         self.test_set += self.load_dataset_rank(test_dir, num=self.num_test_files, mode='test')
@@ -199,18 +199,19 @@ class Dataset(object):
                         vid = self.vtype_vid[curr_vtype]
                     vids.append(vid)
 
-                    if qid not in self.qid_uid_set:
-                        self.qid_uid_set[qid] = {}
-                    if uids[-1] not in self.qid_uid_set[qid]:
-                        self.qid_uid_set[qid][uids[-1]] = 0
-                    else:
-                        continue
-                    data_set.append({'session_id': session_id + '-' + str(idx),
-                                     'qids':qids, 'query': query,
-                                     'uids': uids, 'urls': ['', curr_url],
-                                     'vids': vids, 'vtypes': ['', curr_vtype],
-                                     'rank': [i for i in range(2)],
-                                     'clicks': clicks})
+                    if mode != 'train':
+                        if qid not in self.qid_uid_set:
+                            self.qid_uid_set[qid] = {}
+                        if uids[-1] not in self.qid_uid_set[qid]:
+                            self.qid_uid_set[qid][uids[-1]] = 0
+                        else:
+                            continue
+                        data_set.append({'session_id': session_id + '-' + str(idx),
+                                         'qids':qids, 'query': query,
+                                         'uids': uids, 'urls': ['', curr_url],
+                                         'vids': vids, 'vtypes': ['', curr_vtype],
+                                         'rank': [i for i in range(2)],
+                                         'clicks': clicks})
         return data_set
 
     def _one_mini_batch(self, data, indices):
