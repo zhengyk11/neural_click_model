@@ -185,7 +185,7 @@ class Dataset(object):
                         self.url_uid[curr_url] = len(self.url_uid)
                         self.uid_url[self.url_uid[curr_url]] = curr_url
                     if curr_url not in self.url_uid:
-                        uid = 0
+                        continue
                     else:
                         uid = self.url_uid[curr_url]
                     uids.append(uid)
