@@ -149,13 +149,13 @@ def rank(args):
     """
     logger = logging.getLogger("neural_click_model")
     logger.info('Checking the data files...')
-    for data_path in args.dev_dirs:
+    for data_path in args.train_dirs + args.dev_dirs:
         assert os.path.exists(data_path), '{} file does not exist.'.format(data_path)
     # logger.info('Load data_set and vocab...')
     # with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
     #     vocab = pickle.load(fin)
     #     logger.info('Vocab size is {}'.format(vocab.size()))
-    dataset = Dataset(args, dev_dirs=args.dev_dirs, isRank=True)
+    dataset = Dataset(args, train_dirs=args.train_dirs, dev_dirs=args.dev_dirs, isRank=True)
     logger.info('Initialize the model...')
     model = Model(args, len(dataset.qid_query), len(dataset.uid_url),  len(dataset.vid_vtype))
     logger.info('model.global_step: {}'.format(model.global_step))

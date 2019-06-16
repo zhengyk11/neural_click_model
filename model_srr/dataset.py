@@ -162,11 +162,13 @@ class Dataset(object):
                 # if session_id not in self.train_session_id:
                 #     continue
                 query = attr[0].strip().lower()
-                if query not in self.query_qid:
+                if query not in self.query_qid and mode == 'train':
                     self.query_qid[query] = len(self.query_qid)
                     self.qid_query[self.query_qid[query]] = query
-                qid = self.query_qid[query]
-
+                if query in self.query_qid:
+                    qid = self.query_qid[query]
+                else:
+                    continue
                 urls = map(int, attr[2].strip().split())
                 if len(urls) < self.max_d_num:
                     continue
@@ -179,15 +181,23 @@ class Dataset(object):
                     clicks = [0, 0, 0]
                     qids = [qid, qid]
                     uids = [0]
-                    if curr_url not in self.url_uid:
+                    if curr_url not in self.url_uid and mode == 'train':
                         self.url_uid[curr_url] = len(self.url_uid)
                         self.uid_url[self.url_uid[curr_url]] = curr_url
-                    uids.append(self.url_uid[curr_url])
+                    if curr_url not in self.url_uid:
+                        uid = 0
+                    else:
+                        uid = self.url_uid[curr_url]
+                    uids.append(uid)
                     vids = [0]
-                    if curr_vtype not in self.vtype_vid:
+                    if curr_vtype not in self.vtype_vid and mode == 'train':
                         self.vtype_vid[curr_vtype] = len(self.vtype_vid)
                         self.vid_vtype[self.vtype_vid[curr_vtype]] = curr_vtype
-                    vids.append(self.vtype_vid[curr_vtype])
+                    if curr_vtype not in self.vtype_vid:
+                        vid = 0
+                    else:
+                        vid = self.vtype_vid[curr_vtype]
+                    vids.append(vid)
 
                     if qid not in self.qid_uid_set:
                         self.qid_uid_set[qid] = {}
