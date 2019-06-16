@@ -78,6 +78,9 @@ class Dataset(object):
                 for test_dir in test_dirs:
                     self.test_set += self.load_dataset(test_dir, num=self.num_test_files, mode='test')
                 self.logger.info('Test set size: {} sessions.'.format(len(self.test_set)))
+        self.logger.info('Query size: {}.'.format(len(self.qid_query)))
+        self.logger.info('URL size: {}.'.format(len(self.uid_url)))
+        self.logger.info('Vertical type size: {}.'.format(len(self.vid_vtype)))
 
     def load_dataset(self, data_path, num, mode):
         """
